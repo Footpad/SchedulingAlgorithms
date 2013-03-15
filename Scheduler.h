@@ -12,6 +12,8 @@
 #include <vector>
 #include <semaphore.h>
 #include "Thread.h"
+#include <time.h>
+#include <sys/siginfo.h>
 
 class Task;
 
@@ -27,7 +29,7 @@ public:
 
 	void* run();
 
-	void tick();
+	static void tick(union sigval sig);
 
 	std::vector<Task*> *getTaskSet();
 
@@ -35,7 +37,9 @@ protected:
 	TaskSet taskSet;
 
 private:
-	timer_t *deadlineTimers;
+	timer_t tickingTimer;
+
+	unsigned int tickCounter;
 
 	sem_t scheduleSem;
 };
