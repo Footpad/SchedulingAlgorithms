@@ -9,6 +9,7 @@
 #define SCTSCHEDULER_H_
 
 #include "Scheduler.h"
+#include "Task.h"
 
 class SCTScheduler: public Scheduler {
 public:

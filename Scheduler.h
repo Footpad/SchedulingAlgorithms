@@ -14,6 +14,11 @@
 #include "Thread.h"
 #include <time.h>
 #include <sys/siginfo.h>
+#include <sys/trace.h>
+
+// The frequency of the timer tick
+#define TIMER_PERIOD_NANO	(50000000)
+#define TIMER_PERIOD_SEC	(0)
 
 class Task;
 
@@ -36,10 +41,9 @@ public:
 protected:
 	TaskSet taskSet;
 
+	unsigned int tickCounter;
 private:
 	timer_t tickingTimer;
-
-	unsigned int tickCounter;
 
 	sem_t scheduleSem;
 };

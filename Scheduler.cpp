@@ -15,6 +15,9 @@ Scheduler::Scheduler() :
 }
 
 Scheduler::~Scheduler() {
+	// destroy the timer
+	timer_delete(tickingTimer);
+
 	// delete all the allocated task objects
 	while(taskSet.size() > 0) {
 		delete taskSet.back();
@@ -28,16 +31,35 @@ void Scheduler::createTask(std::string name, int computeTime, int period,
 }
 
 void* Scheduler::run() {
+	// declare the variables the timer will run off of
+	struct itimerspec timerSpec;
+	struct sigevent event;
+
 	//When we first are told to start, start the tasks...
 	for(std::size_t i; i < taskSet.size(); i++) {
+		taskSet[i]->postSem();
 		taskSet[i]->start();
 	}
 
 	//TODO: start the ticking timer
+	// produce a thread which calls tick with this as an argument when the timer ticks
+	SIGEV_THREAD_INIT(&event, Scheduler::tick, this, NULL);
+
+	/* Establish the measurement period */
+	timerSpec.it_interval.tv_nsec = TIMER_PERIOD_NANO;
+	timerSpec.it_interval.tv_sec = TIMER_PERIOD_SEC;
+	timerSpec.it_value.tv_nsec = TIMER_PERIOD_NANO;
+	timerSpec.it_value.tv_sec = TIMER_PERIOD_SEC;
+
+	// set the timer to get going on ticking
+	timer_create(CLOCK_REALTIME, &event, &tickingTimer);
+	timer_settime(tickingTimer, 0, &timerSpec, NULL);
 
 	//then perform the scheduling
 	while (!killThread) {
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Scheduling");
 		scheduleTasks();
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Done Scheduling");
 		sem_wait(&scheduleSem);
 	}
 
@@ -63,9 +85,11 @@ void Scheduler::tick(union sigval sig) {
 				//execute, then we missed a deadline
 
 				//TODO: report missed deadline here?
+				TraceEvent(_NTO_TRACE_INSERTSUSEREVENT, _NTO_TRACE_USERFIRST, self->tickCounter, i);
 			}
 
 			semPosted = true;
+			task->setState(TP_READY);	//make doubly sure the task is marked ready
 			task->postSem();
 		}
 

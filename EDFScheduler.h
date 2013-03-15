@@ -9,6 +9,8 @@
 #define EDFSCHEDULER_H_
 
 #include "Scheduler.h"
+#include "Task.h"
+#include <climits>
 
 class EDFScheduler: public Scheduler {
 public:

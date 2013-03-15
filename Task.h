@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <string>
 #include <semaphore.h>
+#include <sys/trace.h>
 
 enum TaskPriority {
 	TP_FINISHED = 0, TP_READY = 30, TP_RUNNING = 40, TP_SCHEDULER = 50
