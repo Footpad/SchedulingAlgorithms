@@ -31,17 +31,19 @@ void Scheduler::createTask(std::string name, int computeTime, int period,
 }
 
 void* Scheduler::run() {
+	this->setPriority(TP_RUNNING);
+
 	// declare the variables the timer will run off of
 	struct itimerspec timerSpec;
 	struct sigevent event;
 
 	//When we first are told to start, start the tasks...
 	for(std::size_t i; i < taskSet.size(); i++) {
-		taskSet[i]->postSem();
 		taskSet[i]->start();
+		taskSet[i]->postSem();
+		taskSet[i]->setState(TP_READY);
 	}
 
-	//TODO: start the ticking timer
 	// produce a thread which calls tick with this as an argument when the timer ticks
 	SIGEV_THREAD_INIT(&event, Scheduler::tick, this, NULL);
 

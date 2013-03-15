@@ -14,7 +14,7 @@
 #include <sys/trace.h>
 
 enum TaskPriority {
-	TP_FINISHED = 0, TP_READY = 30, TP_RUNNING = 40, TP_SCHEDULER = 50
+	TP_FINISHED = 0, TP_READY = 7, TP_RUNNING = 8, TP_SCHEDULER = 9
 };
 
 class Task {

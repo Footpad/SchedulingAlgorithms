@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
 
 		//start the simulation
 		sc->start();
-		sc->setPriority(TP_SCHEDULER);
 		sc->join();					//this will stick because the thread never gets stop()'d
 
 		cout << "Exiting..." << endl;

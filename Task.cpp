@@ -16,7 +16,8 @@ name(n),
 computeTime(c),
 period(p),
 deadline(d),
-state(TP_FINISHED) {
+state(TP_READY),
+scheduler(scheduler) {
 	assert(computeTime > 0);
 	assert(period > 0);
 	assert(deadline > 0);
@@ -45,11 +46,11 @@ void* Task::run() {
 	while(!killThread) {
 		sem_wait(&doWork);						// Block until the deadline passes so we don't do work
 		state = TP_READY;
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 10, "Running");
-		while(completedTime != computeTime) {
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Running");
+		while(completedTime < computeTime) {
 			state = TP_RUNNING;					// Spin-lock to burn CPU
 		}
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 20, "Finished");
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Finished");
 		state = TP_FINISHED;
 		completedTime = 0; 						// reset the completedTime and go back to waiting for the next period
 		sem_post(scheduler); 					// signal the scheduler it is time to schedule again (because the task finished)
@@ -58,15 +59,8 @@ void* Task::run() {
 }
 
 void Task::postSem() {
-	int cur;
-	int ret;
-	ret = sem_getvalue(&doWork, &cur);
-	//if the call succeeded and the semaphore is locked
-	if( ret == 0 && cur == 0) {
-		//post on it
-		sem_post(&doWork);
-	}
-	//otherwise, we don't care because the task already knows it can run again and is in the READY state
+	//post on it
+	sem_post(&doWork);
 }
 
 int Task::getPriority() {
