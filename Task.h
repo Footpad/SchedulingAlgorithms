@@ -12,9 +12,11 @@
 #include <string>
 #include <semaphore.h>
 #include <sys/trace.h>
+#include <time.h>
+#include <sys/siginfo.h>
 
 enum TaskPriority {
-	TP_FINISHED = 0, TP_READY = 7, TP_RUNNING = 8, TP_SCHEDULER = 9
+	TP_FINISHED = 1, TP_READY = 7, TP_RUNNING = 8, TP_SCHEDULER = 9
 };
 
 class Task {
@@ -94,6 +96,13 @@ public:
 	 */
 	void postSem();
 
+	std::string getName();
+
+	/**
+	 * Called by the timer to signify the deadline has passed
+	 */
+	static void tick(union sigval sig);
+
 protected:
 	// Flag which will be set when stop() is called.
 	bool killThread;
@@ -142,6 +151,8 @@ private:
 	 * The state of the task; ready, running, finished. Uses the priority enum
 	 */
 	int state;
+
+	timer_t deadlineTimer;
 
 	/**
 	 * Pointer to the semaphore the scheduler synchronizes on.

@@ -17,7 +17,7 @@
 #include <sys/trace.h>
 
 // The frequency of the timer tick
-#define TIMER_PERIOD_NANO	(50000000)
+#define TIMER_PERIOD_NANO	(10000000)
 #define TIMER_PERIOD_SEC	(0)
 
 class Task;
@@ -34,7 +34,7 @@ public:
 
 	void* run();
 
-	static void tick(union sigval sig);
+//	static void tick(union sigval sig);
 
 	std::vector<Task*> *getTaskSet();
 
@@ -43,8 +43,6 @@ protected:
 
 	unsigned int tickCounter;
 private:
-	timer_t tickingTimer;
-
 	sem_t scheduleSem;
 };
 

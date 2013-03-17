@@ -38,5 +38,7 @@ void SCTScheduler::scheduleTasks() {
 	//With the earliest deadline known, set that task to running...
 	if(shortestIdx != -1) {
 		taskSet[shortestIdx]->setPriority(TP_RUNNING);
+		std::string msg = "Running: " + taskSet[shortestIdx]->getName();
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, msg.c_str());
 	}
 }
