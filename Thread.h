@@ -9,10 +9,11 @@
 #define THREAD_H_
 
 #include <pthread.h>
+#include <string>
 
 class Thread {
 public:
-	Thread();
+	Thread(std::string name);
 	virtual ~Thread();
 
 	/**
@@ -39,11 +40,33 @@ public:
 	 */
 	virtual void* run() = 0;
 
+	/**
+	 * Returns the priority of the thread.
+	 *
+	 * @return an int representing the priority of the thread
+	 */
+	int getPriority();
+
+	/**
+	 * Sets the priority of the thread.
+	 *
+	 * @param prio - the new priority to be set
+	 */
+	void setPriority(int prio);
+
+	/**
+	 * @return the name used by the underlying pthread
+	 */
+	std::string getName();
+
 protected:
 	// Flag which will be set when stop() is called.
 	bool killThread;
 
-	void setPriority(int prio);
+	/**
+	 * The name of the task; reflected as the name of the underlying thread.
+	 */
+	std::string name;
 
 private:
 	/**
@@ -51,7 +74,9 @@ private:
 	 */
 	static void* pthread_entry(void* args);
 
-	// pthread id for this thread.
+	/**
+	 * pthread id for this thread.
+	 */
 	pthread_t thread;
 };
 

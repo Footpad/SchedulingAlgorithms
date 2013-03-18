@@ -4,6 +4,7 @@
 #include <string>
 using namespace std;
 
+#include "SchedulingAlgorithms.h"
 #include "RMAScheduler.h"
 #include "EDFScheduler.h"
 #include "SCTScheduler.h"
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 1:
 		default:
-			cout << "RM Scheduler." << endl;
+			cout << "RMA Scheduler." << endl;
 			sc = new RMAScheduler();
 			break;
 		}

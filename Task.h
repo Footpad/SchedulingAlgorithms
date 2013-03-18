@@ -14,51 +14,24 @@
 #include <sys/trace.h>
 #include <time.h>
 #include <sys/siginfo.h>
+#include "Thread.h"
+#include "SchedulingAlgorithms.h"
 
 enum TaskPriority {
-	TP_FINISHED = 1, TP_READY = 7, TP_RUNNING = 8, TP_SCHEDULER = 9
+	TP_FINISHED = 1, TP_READY = 17, TP_RUNNING = 18, TP_SCHEDULER = 19
 };
 
-class Task {
+class Task : public Thread {
 public:
 	Task(std::string name, int computeTime, int period, int deadline, sem_t* scheduler);
 	virtual ~Task();
 
-	/**
-	 * Join on the underlying thread.
-	 */
-	void join();
-
-	/**
-	 * Creates a pthread which targets Thread's run() method.
-	 */
-	virtual void start();
-
-	/**
-	 * Sets a flag which means the thread should stop.
-	 *
-	 * Subclassers must implement the stopping behavior in run().
-	 */
-	virtual void stop();
+	void startDeadlineTimer();
 
 	/**
 	 * @return the return value when the Thread exits.
 	 */
 	void* run();
-
-	/**
-	 * Returns the priority of the task.
-	 *
-	 * @return an int representing the priority of the task
-	 */
-	int getPriority();
-
-	/**
-	 * Sets the priority of the task.
-	 *
-	 * @param prio - the new priority to be set
-	 */
-	void setPriority(int prio);
 
 	/**
 	 * Returns the compute time of the task.
@@ -103,24 +76,7 @@ public:
 	 */
 	static void tick(union sigval sig);
 
-protected:
-	// Flag which will be set when stop() is called.
-	bool killThread;
-
 private:
-	/**
-	 * Static function which calls the Thread's run() method.
-	 */
-	static void* pthread_entry(void* args);
-
-	// pthread id for this thread.
-	pthread_t thread;
-
-	/**
-	 * The name of the task; reflected as the name of the underlying thread.
-	 */
-	std::string name;
-
 	/**
 	 * The time it takes to actually complete the task
 	 */
@@ -158,6 +114,14 @@ private:
 	 * Pointer to the semaphore the scheduler synchronizes on.
 	 */
 	sem_t* scheduler;
+
+	struct itimerspec deadlineTimerSpec;
+	struct sigevent deadlineEvent;
+
+	std::string deadlineTimerString;
+	std::string deadlineMissedString;
+	const char *deadlineTimerMsg;
+	const char *deadlineMissedMsg;
 };
 
 #endif /* TASK_H_ */

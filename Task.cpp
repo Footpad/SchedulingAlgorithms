@@ -14,9 +14,7 @@
 #define TIMER_PERIOD_SEC	(0)
 
 Task::Task(std::string n, int c, int p, int d, sem_t* scheduler) :
-killThread(false),
-thread(NULL),
-name(n),
+Thread(n),
 computeTime(c),
 period(p),
 deadline(d),
@@ -25,6 +23,21 @@ scheduler(scheduler) {
 	assert(computeTime > 0);
 	assert(period > 0);
 	assert(deadline > 0);
+
+	// produce a thread which calls tick with this as an argument when the timer ticks
+	SIGEV_THREAD_INIT(&deadlineEvent, Task::tick, this, NULL);
+
+	/* Establish the measurement period */
+	deadlineTimerSpec.it_interval.tv_nsec = (TIMER_PERIOD_NANO * deadline);
+	deadlineTimerSpec.it_interval.tv_sec = TIMER_PERIOD_SEC;
+	deadlineTimerSpec.it_value.tv_nsec = (TIMER_PERIOD_NANO * deadline);
+	deadlineTimerSpec.it_value.tv_sec = TIMER_PERIOD_SEC;
+
+	deadlineTimerString = name + " deadline timer.";
+	deadlineMissedString = name + " missed deadline!";
+	deadlineTimerMsg = deadlineTimerString.c_str();
+	deadlineMissedMsg = deadlineMissedString.c_str();
+
 	// initialize the semaphore
 	sem_init(&doWork, 0, 0);
 }
@@ -34,51 +47,36 @@ Task::~Task() {
 	timer_delete(deadlineTimer);
 }
 
-void Task::join() {
-	pthread_join(thread, NULL);
-}
-
-void Task::start() {
-	// declare the variables the timer will run off of
-	struct itimerspec timerSpec;
-	struct sigevent event;
-
-	// produce a thread which calls tick with this as an argument when the timer ticks
-	SIGEV_THREAD_INIT(&event, Task::tick, this, NULL);
-
-	/* Establish the measurement period */
-	timerSpec.it_interval.tv_nsec = (TIMER_PERIOD_NANO * deadline);
-	timerSpec.it_interval.tv_sec = TIMER_PERIOD_SEC;
-	timerSpec.it_value.tv_nsec = (TIMER_PERIOD_NANO * deadline);
-	timerSpec.it_value.tv_sec = TIMER_PERIOD_SEC;
-
+void Task::startDeadlineTimer() {
 	// set the timer to get going on ticking
-	timer_create(CLOCK_REALTIME, &event, &deadlineTimer);
-	timer_settime(deadlineTimer, 0, &timerSpec, NULL);
-
-	pthread_create(&thread, NULL, pthread_entry, this);
-	pthread_setname_np(thread, name.c_str());
-}
-
-void Task::stop() {
-	killThread = true;
+	timer_create(CLOCK_REALTIME, &deadlineEvent, &deadlineTimer);
+	timer_settime(deadlineTimer, 0, &deadlineTimerSpec, NULL);
 }
 
 void* Task::run() {
-	//start the deadline timer of the task...
+	std::string runningString(name + " Running");
+	std::string finishedString(name + " Finished");
+	const char *runningMsg = runningString.c_str();
+	const char *finishedMsg = finishedString.c_str();
+
+	completedTime = 0; 							// initialize the completedTime
 	while(!killThread) {
 		sem_wait(&doWork);						// Block until the deadline passes so we don't do work
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Running");
+#if TRACE_EVENT_LOG_NORMAL
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, runningMsg);
+#endif
 		while(completedTime < computeTime) {
 			//TODO: fix this magic number
 			nanospin_ns( 4380000 );				//spin for 5ms
 			this->incrementCompletedTime();
 			state = TP_RUNNING;					// Spin-lock to burn CPU
 		}
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Finished");
+		completedTime = 0; 						// reset the completedTime for SCT finished state.
+#if TRACE_EVENT_LOG_NORMAL
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, finishedMsg);
+#endif
 		state = TP_FINISHED;
 		sem_post(scheduler); 					// signal the scheduler it is time to schedule again (because the task finished)
-		completedTime = 0; 						// reset the completedTime
 	}
 	return NULL;
 }
@@ -86,22 +84,6 @@ void* Task::run() {
 void Task::postSem() {
 	//post on it
 	sem_post(&doWork);
-}
-
-int Task::getPriority() {
-	int policy;
-	struct sched_param params;
-	pthread_getschedparam(thread, &policy, &params);
-	return params.sched_priority;
-}
-
-void Task::setPriority(int prio) {
-	//Get us on a higher priority...
-	int policy;
-	struct sched_param params;
-	pthread_getschedparam(thread, &policy, &params);
-	params.sched_priority = prio;
-	pthread_setschedparam(thread, policy, &params);
 }
 
 int Task::getState() {
@@ -144,22 +126,19 @@ void Task::setDeadline(int d) {
 	deadline = d;
 }
 
-void* Task::pthread_entry(void* arg) {
-	Task* threadedObject = (Task*)arg;
-	return threadedObject->run();
-}
-
 void Task::tick(union sigval sig) {
 	//get the schedulers semaphore from the timer...
 	Task* self = (Task*) sig.sival_ptr;
 
-	std::string msg = self->name + " deadline timer.";
-	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, msg.c_str());
+#if TRACE_EVENT_LOG_NORMAL
+	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, self->deadlineTimerMsg);
+#endif
 
 	//if the task hasn't finished since the last deadline...
 	if(self->state != TP_FINISHED) {
-		std::string msg = self->name + " missed deadline!";
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, msg.c_str());
+#if TRACE_EVENT_LOG_CRITICAL
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, self->deadlineMissedMsg);
+#endif
 	}
 
 	self->state = TP_READY;
@@ -168,8 +147,4 @@ void Task::tick(union sigval sig) {
 	sem_post(&self->doWork);
 	//post on the schedulers semaphore to so it can schedule tasks again
 	sem_post(self->scheduler);
-}
-
-std::string Task::getName() {
-	return name;
 }

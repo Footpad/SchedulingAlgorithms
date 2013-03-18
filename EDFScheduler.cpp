@@ -39,7 +39,5 @@ void EDFScheduler::scheduleTasks() {
 	//With the earliest deadline known, set that task to running...
 	if(earliestIdx != -1) {
 		taskSet[earliestIdx]->setPriority(TP_RUNNING);
-		std::string msg = "Running: " + taskSet[earliestIdx]->getName();
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, msg.c_str());
 	}
 }
