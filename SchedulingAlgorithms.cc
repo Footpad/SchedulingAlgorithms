@@ -18,14 +18,12 @@ int main(int argc, char *argv[]) {
 	string name;
 	int computeTime, deadline, period;
 
-	if (argc == 2) {
+	if (argc == 3) {
 		ifstream file;
 		file.open(argv[1], ios::in);
 
 		//select the scheduling algorithm...
-		do {
-			file >> choice;
-		} while (choice < 1 || choice > 3);
+		choice = atoi(argv[2]);
 
 		switch (choice) {
 		case 3:
@@ -64,7 +62,7 @@ int main(int argc, char *argv[]) {
 		//cleanup
 		delete sc;
 	} else {
-		cerr << "Usage: " << argv[0] << " Filename" << endl;
+		cerr << "Usage: " << argv[0] << " Filename SchedulerInt" << endl;
 	}
 
 	return EXIT_SUCCESS;
