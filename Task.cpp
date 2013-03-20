@@ -13,6 +13,8 @@
 #define TIMER_PERIOD_NANO	(5000000)
 #define TIMER_PERIOD_SEC	(0)
 
+#define BUSY_WAIT_NANO (4500000)
+
 Task::Task(std::string n, int c, int p, int d, sem_t* scheduler) :
 Thread(n),
 computeTime(c),
@@ -57,22 +59,25 @@ void* Task::run() {
 	std::string runningString(name + " Running");
 	std::string finishedString(name + " Finished");
 	const char *runningMsg = runningString.c_str();
+#if TRACE_EVENT_LOG_DEBUG
 	const char *finishedMsg = finishedString.c_str();
+#endif
+	completedTime = 0;							// initialize the completedTime
 
-	completedTime = 0; 							// initialize the completedTime
+	sem_post(scheduler);						// notify the scheduler that the task is created
+
 	while(!killThread) {
 		sem_wait(&doWork);						// Block until the deadline passes so we don't do work
 #if TRACE_EVENT_LOG_NORMAL
 		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, runningMsg);
 #endif
 		while(completedTime < computeTime) {
-			//TODO: fix this magic number
-			nanospin_ns( 4380000 );				//spin for 5ms
+			nanospin_ns(BUSY_WAIT_NANO);		//spin for a time tick
 			this->incrementCompletedTime();
 			state = TP_RUNNING;					// Spin-lock to burn CPU
 		}
 		completedTime = 0; 						// reset the completedTime for SCT finished state.
-#if TRACE_EVENT_LOG_NORMAL
+#if TRACE_EVENT_LOG_DEBUG
 		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, finishedMsg);
 #endif
 		state = TP_FINISHED;
@@ -110,6 +115,11 @@ void Task::setComputeTime(int c) {
 	computeTime = c;
 }
 
+long Task::getRemainingDeadline() {
+	timer_gettime(deadlineTimer, &deadlineRemainingSpec);
+	return deadlineRemainingSpec.it_value.tv_nsec;
+}
+
 int Task::getPeriod() {
 	return period;
 }
@@ -130,7 +140,7 @@ void Task::tick(union sigval sig) {
 	//get the schedulers semaphore from the timer...
 	Task* self = (Task*) sig.sival_ptr;
 
-#if TRACE_EVENT_LOG_NORMAL
+#if TRACE_EVENT_LOG_DEBUG
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, self->deadlineTimerMsg);
 #endif
 

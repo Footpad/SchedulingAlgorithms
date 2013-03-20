@@ -9,7 +9,7 @@
 #define SCHEDULINGALOGIRTHMS_H_
 
 // Configure this define to set the trace event log level.
-#define TRACE_EVENT_LOG_LEVEL 			TRACE_EVENT_LOG_LEVEL_NORMAL
+#define TRACE_EVENT_LOG_LEVEL 			TRACE_EVENT_LOG_LEVEL_DEBUG
 
 /**
  * TRACE_EVENT_LOG_LEVEL

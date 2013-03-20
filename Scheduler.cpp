@@ -33,10 +33,14 @@ int deadline) {
 void* Scheduler::run() {
 	this->setPriority(TP_SCHEDULER);
 
+	// calibrate nanospin_ns before the tasks do it.
+	nanospin_calibrate(0);
+
 	//When we first are told to start, start the tasks...
 	for(std::size_t i; i < taskSet.size(); i++) {
 		taskSet[i]->setState(TP_READY);
 		taskSet[i]->start();
+		sem_wait(&scheduleSem);
 		taskSet[i]->setPriority(TP_READY);
 	}
 
@@ -44,13 +48,13 @@ void* Scheduler::run() {
 		taskSet[i]->startDeadlineTimer();
 	}
 
-#if TRACE_EVENT_LOG_NORMAL
+#if TRACE_EVENT_LOG_DEBUG
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Scheduling");
 #endif
 
 	scheduleTasks();
 
-#if TRACE_EVENT_LOG_NORMAL
+#if TRACE_EVENT_LOG_DEBUG
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Done Scheduling");
 #endif
 
@@ -62,11 +66,11 @@ void* Scheduler::run() {
 	//then perform the scheduling
 	while (!killThread) {
 		sem_wait(&scheduleSem);
-#if TRACE_EVENT_LOG_NORMAL
+#if TRACE_EVENT_LOG_DEBUG
 		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Scheduling");
 #endif
 		scheduleTasks();
-#if TRACE_EVENT_LOG_NORMAL
+#if TRACE_EVENT_LOG_DEBUG
 		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Done Scheduling");
 #endif
 	}

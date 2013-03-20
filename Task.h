@@ -18,7 +18,7 @@
 #include "SchedulingAlgorithms.h"
 
 enum TaskPriority {
-	TP_FINISHED = 1, TP_READY = 17, TP_RUNNING = 18, TP_SCHEDULER = 19
+	TP_FINISHED = 1, TP_READY = 37, TP_RUNNING = 38, TP_SCHEDULER = 39
 };
 
 class Task : public Thread {
@@ -46,6 +46,8 @@ public:
 	 * work has been done.
 	 */
 	void setComputeTime(int computeTime);
+
+	long getRemainingDeadline();
 
 	/**
 	 * Increments the amount of time completed
@@ -117,6 +119,7 @@ private:
 
 	struct itimerspec deadlineTimerSpec;
 	struct sigevent deadlineEvent;
+	struct itimerspec deadlineRemainingSpec;
 
 	std::string deadlineTimerString;
 	std::string deadlineMissedString;

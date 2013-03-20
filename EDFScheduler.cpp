@@ -15,7 +15,8 @@ EDFScheduler::~EDFScheduler() {
 
 void EDFScheduler::scheduleTasks() {
 	int earliestIdx = -1;
-	int earliestDeadline = INT_MAX;
+	long earliestDeadline = LONG_MAX;
+	long currentEarliestDeadline;
 
 	// Iterate over all the tasks
 	for (std::size_t i = 0; i < taskSet.size(); i++) {
@@ -29,9 +30,10 @@ void EDFScheduler::scheduleTasks() {
 		//look at the deadlines of those tasks which are ready or running
 		if(task->getState() == TP_READY || task->getState() == TP_RUNNING) {
 			//The time-to-deadline is equal to the deadline - the time elapsed since the last deadline
-			if(task->getDeadline() < earliestDeadline) {
+			currentEarliestDeadline = task->getRemainingDeadline();
+			if(currentEarliestDeadline < earliestDeadline) {
 				earliestIdx = i;
-				earliestDeadline = task->getDeadline();
+				earliestDeadline = currentEarliestDeadline;
 			}
 		}
 	}
