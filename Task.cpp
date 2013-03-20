@@ -69,7 +69,7 @@ void* Task::run() {
 	while(!killThread) {
 		sem_wait(&doWork);						// Block until the deadline passes so we don't do work
 #if TRACE_EVENT_LOG_NORMAL
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, runningMsg);
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_TASK_START, runningMsg);
 #endif
 		while(completedTime < computeTime) {
 			nanospin_ns(BUSY_WAIT_NANO);		//spin for a time tick
@@ -78,7 +78,7 @@ void* Task::run() {
 		}
 		completedTime = 0; 						// reset the completedTime for SCT finished state.
 #if TRACE_EVENT_LOG_DEBUG
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, finishedMsg);
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_TASK_END, finishedMsg);
 #endif
 		state = TP_FINISHED;
 		sem_post(scheduler); 					// signal the scheduler it is time to schedule again (because the task finished)
@@ -141,13 +141,13 @@ void Task::tick(union sigval sig) {
 	Task* self = (Task*) sig.sival_ptr;
 
 #if TRACE_EVENT_LOG_DEBUG
-	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, self->deadlineTimerMsg);
+	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_DEADLINE_TIMER, self->deadlineTimerMsg);
 #endif
 
 	//if the task hasn't finished since the last deadline...
 	if(self->state != TP_FINISHED) {
 #if TRACE_EVENT_LOG_CRITICAL
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, self->deadlineMissedMsg);
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_DEADLINE_MISS, self->deadlineMissedMsg);
 #endif
 	}
 

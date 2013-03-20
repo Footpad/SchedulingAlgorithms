@@ -49,13 +49,13 @@ void* Scheduler::run() {
 	}
 
 #if TRACE_EVENT_LOG_DEBUG
-	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Scheduling");
+	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_SCHEDULING_START, "Scheduling");
 #endif
 
 	scheduleTasks();
 
 #if TRACE_EVENT_LOG_DEBUG
-	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Done Scheduling");
+	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_SCHEDULING_END, "Done Scheduling");
 #endif
 
 	for (std::size_t i = 0; i < taskSet.size(); i++) {
@@ -67,11 +67,11 @@ void* Scheduler::run() {
 	while (!killThread) {
 		sem_wait(&scheduleSem);
 #if TRACE_EVENT_LOG_DEBUG
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERFIRST, "Scheduling");
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_SCHEDULING_START, "Scheduling");
 #endif
 		scheduleTasks();
 #if TRACE_EVENT_LOG_DEBUG
-		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, _NTO_TRACE_USERLAST, "Done Scheduling");
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_SCHEDULING_END, "Done Scheduling");
 #endif
 	}
 

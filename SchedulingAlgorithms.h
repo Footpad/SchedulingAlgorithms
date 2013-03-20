@@ -47,7 +47,13 @@
 /**
  * TRACE_EVENT_CODE
  *
- *
+ * Enumeration of trace event types used by this fixture.
  */
+#define TRACE_EVENT_SCHEDULING_START	10
+#define TRACE_EVENT_SCHEDULING_END		11
+#define TRACE_EVENT_TASK_START			20
+#define TRACE_EVENT_TASK_END			21
+#define TRACE_EVENT_DEADLINE_TIMER		30
+#define TRACE_EVENT_DEADLINE_MISS		31
 
 #endif /* SCHEDULINGALOGIRTHMS_H_ */
