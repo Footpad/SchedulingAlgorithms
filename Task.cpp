@@ -8,6 +8,7 @@
 #include "Task.h"
 #include <cassert>
 #include <semaphore.h>
+#include <stdlib.h>
 
 //1ms deadline and period
 #define TIMER_PERIOD_NANO	(5000000)
@@ -45,6 +46,7 @@ scheduler(scheduler) {
 }
 
 Task::~Task() {
+	pthread_abort(thread);
 	sem_destroy(&doWork);
 	timer_delete(deadlineTimer);
 }
@@ -117,7 +119,7 @@ void Task::setComputeTime(int c) {
 
 long Task::getRemainingDeadline() {
 	timer_gettime(deadlineTimer, &deadlineRemainingSpec);
-	return deadlineRemainingSpec.it_value.tv_nsec;
+	return (deadlineRemainingSpec.it_value.tv_nsec + 2500000)/50000000;
 }
 
 int Task::getPeriod() {
@@ -136,6 +138,7 @@ void Task::setDeadline(int d) {
 	deadline = d;
 }
 
+static int missedDeadlines = 0;
 void Task::tick(union sigval sig) {
 	//get the schedulers semaphore from the timer...
 	Task* self = (Task*) sig.sival_ptr;
@@ -149,6 +152,14 @@ void Task::tick(union sigval sig) {
 #if TRACE_EVENT_LOG_CRITICAL
 		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_DEADLINE_MISS, self->deadlineMissedMsg);
 #endif
+		missedDeadlines++;
+
+		if(missedDeadlines > MAX_DEADLINE_MISSES) {
+			exit(-1);
+		}
+	} else {
+		if((missedDeadlines > 0))
+			missedDeadlines--;
 	}
 
 	self->state = TP_READY;

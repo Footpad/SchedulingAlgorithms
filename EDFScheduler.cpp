@@ -23,7 +23,7 @@ void EDFScheduler::scheduleTasks() {
 		Task *task = taskSet[i];
 
 		//if this task is running, set it back to ready
-		if(task->getPriority() <= TP_RUNNING) {
+		if(task->getPriority() != TP_READY) {
 			task->setPriority(TP_READY);
 		}
 

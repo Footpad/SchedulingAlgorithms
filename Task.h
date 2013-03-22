@@ -17,8 +17,10 @@
 #include "Thread.h"
 #include "SchedulingAlgorithms.h"
 
+#define MAX_DEADLINE_MISSES (15)
+
 enum TaskPriority {
-	TP_FINISHED = 1, TP_READY = 37, TP_RUNNING = 38, TP_SCHEDULER = 39
+	TP_FINISHED = 1, TP_READY = 7, TP_RUNNING = 8, TP_SCHEDULER = 9
 };
 
 class Task : public Thread {

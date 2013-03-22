@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <unistd.h>
 using namespace std;
 
 #include "SchedulingAlgorithms.h"
@@ -55,12 +56,18 @@ int main(int argc, char *argv[]) {
 
 		//start the simulation
 		sc->start();
-		sc->join();					//this will stick because the thread never gets stop()'d
 
-		cout << "Exiting..." << endl;
+//		usleep(100000);
+
+//		sc->stop();
+		sc->join();					//this will stick because the thread never gets stop()'d
 
 		//cleanup
 		delete sc;
+
+		cout << "Exiting..." << endl;
+
+
 	} else {
 		cerr << "Usage: " << argv[0] << " Filename SchedulerInt" << endl;
 	}

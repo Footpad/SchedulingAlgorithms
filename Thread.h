@@ -68,16 +68,16 @@ protected:
 	 */
 	std::string name;
 
+	/**
+	 * pthread id for this thread.
+	 */
+	pthread_t thread;
+
 private:
 	/**
 	 * Static function which calls the Thread's run() method.
 	 */
 	static void* pthread_entry(void* args);
-
-	/**
-	 * pthread id for this thread.
-	 */
-	pthread_t thread;
 };
 
 #endif /* THREAD_H_ */
