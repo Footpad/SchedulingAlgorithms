@@ -13,7 +13,7 @@
 #define TIMER_PERIOD_NANO	(5000000)
 #define TIMER_PERIOD_SEC	(0)
 
-#define BUSY_WAIT_NANO (4500000)
+#define BUSY_WAIT_NANO (4440000)
 
 Task::Task(std::string n, int c, int p, int d, sem_t* scheduler) :
 Thread(n),
