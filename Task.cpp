@@ -6,14 +6,20 @@
  */
 
 #include "Task.h"
+#include <sys/trace.h>
+#include <time.h>
+#include <sys/siginfo.h>
 #include <cassert>
 #include <semaphore.h>
 #include <stdlib.h>
 
-//1ms deadline and period
+// 5 milliseconds
+// The timeslice value for which the task time values are based.
 #define TIMER_PERIOD_NANO	(5000000)
 #define TIMER_PERIOD_SEC	(0)
 
+// Calibrated number of nanoseconds used for the busy-wait
+// using nanospin_ns().
 #define BUSY_WAIT_NANO (4440000)
 
 Task::Task(std::string n, int c, int p, int d, sem_t* scheduler) :
@@ -23,6 +29,7 @@ period(p),
 deadline(d),
 state(TP_READY),
 scheduler(scheduler) {
+	// Feasibility assertions.
 	assert(computeTime > 0);
 	assert(period > 0);
 	assert(deadline > 0);
@@ -30,12 +37,13 @@ scheduler(scheduler) {
 	// produce a thread which calls tick with this as an argument when the timer ticks
 	SIGEV_THREAD_INIT(&deadlineEvent, Task::tick, this, NULL);
 
-	/* Establish the measurement period */
+	// Establish the measurement period
 	deadlineTimerSpec.it_interval.tv_nsec = (TIMER_PERIOD_NANO * deadline);
 	deadlineTimerSpec.it_interval.tv_sec = TIMER_PERIOD_SEC;
 	deadlineTimerSpec.it_value.tv_nsec = (TIMER_PERIOD_NANO * deadline);
 	deadlineTimerSpec.it_value.tv_sec = TIMER_PERIOD_SEC;
 
+	// Cache the logging strings.
 	deadlineTimerString = name + " deadline timer.";
 	deadlineMissedString = name + " missed deadline!";
 	deadlineTimerMsg = deadlineTimerString.c_str();
@@ -46,6 +54,7 @@ scheduler(scheduler) {
 }
 
 Task::~Task() {
+	// Clean up the task, timer, and semaphore.
 	pthread_abort(thread);
 	sem_destroy(&doWork);
 	timer_delete(deadlineTimer);
@@ -58,6 +67,7 @@ void Task::startDeadlineTimer() {
 }
 
 void* Task::run() {
+	// Build cached strings for logging. on the stack.
 	std::string runningString(name + " Running");
 	std::string finishedString(name + " Finished");
 	const char *runningMsg = runningString.c_str();
@@ -74,7 +84,7 @@ void* Task::run() {
 		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, TRACE_EVENT_TASK_START, runningMsg);
 #endif
 		while(completedTime < computeTime) {
-			nanospin_ns(BUSY_WAIT_NANO);		//spin for a time tick
+			nanospin_ns(BUSY_WAIT_NANO);		// spin for a time tick
 			this->incrementCompletedTime();
 			state = TP_RUNNING;					// Spin-lock to burn CPU
 		}
@@ -113,29 +123,17 @@ int Task::getComputeTime() {
 	return computeTime;
 }
 
-void Task::setComputeTime(int c) {
-	computeTime = c;
-}
-
 long Task::getRemainingDeadline() {
 	timer_gettime(deadlineTimer, &deadlineRemainingSpec);
-	return (deadlineRemainingSpec.it_value.tv_nsec + 2500000)/50000000;
+	return (deadlineRemainingSpec.it_value.tv_nsec + (TIMER_PERIOD_NANO/2))/TIMER_PERIOD_NANO;
 }
 
 int Task::getPeriod() {
 	return period;
 }
 
-void Task::setPeriod(int p) {
-	period = p;
-}
-
 int Task::getDeadline() {
 	return deadline;
-}
-
-void Task::setDeadline(int d) {
-	deadline = d;
 }
 
 static int missedDeadlines = 0;

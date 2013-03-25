@@ -1,6 +1,9 @@
 /*
  * EDFScheduler.cpp
  *
+ * Concrete subclass of a Scheduler implementing the
+ * Earliest Deadline First scheduling algorithm.
+ *
  *  Created on: Mar 13, 2013
  *      Author: dam7633
  */
@@ -14,6 +17,7 @@ EDFScheduler::~EDFScheduler() {
 }
 
 void EDFScheduler::scheduleTasks() {
+	// Initialize variables for determining the earliest deadline task.
 	int earliestIdx = -1;
 	long earliestDeadline = LONG_MAX;
 	long currentEarliestDeadline;

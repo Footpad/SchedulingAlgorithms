@@ -1,17 +1,22 @@
 /*
  * SCTScheduler.cpp
  *
+ * Concrete subclass of a Scheduler implementing the
+ * Shortest Completion Time scheduling algorithm.
+ *
  *  Created on: Mar 13, 2013
  *      Author: dam7633
  */
 
 #include "SCTScheduler.h"
+#include "Task.h"
 
 SCTScheduler::SCTScheduler() {
 }
 
 SCTScheduler::~SCTScheduler() {
 }
+
 void SCTScheduler::scheduleTasks() {
 	int shortestIdx = -1;
 	int shortestTimeLeft = INT_MAX;

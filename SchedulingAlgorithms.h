@@ -1,6 +1,10 @@
 /*
  * SchedulingAlgorithms.h
  *
+ * Common header file for the scheduling algorithms
+ * test fixture project. Includes commonly-used
+ * definitions and macros.
+ *
  *  Created on: Mar 18, 2013
  *      Author: dam7633
  */

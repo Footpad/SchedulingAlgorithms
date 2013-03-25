@@ -1,6 +1,9 @@
 /*
  * Thread.cpp
  *
+ * Base object class which provides the basic functionality and
+ * attributes for a pthread.
+ *
  *  Created on: Dec 27, 2012
  *      Author: jeff
  */
